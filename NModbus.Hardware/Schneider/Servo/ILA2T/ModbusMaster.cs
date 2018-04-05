@@ -1,20 +1,18 @@
-﻿namespace NModbus.Hardware.Schneider.Servo
+﻿namespace NModbus.Hardware.Schneider.Servo.ILA2T
 {
     using System;
-    using System.Collections;
     using NModbus.Extensions.Functions;
-    public partial class ILA2T
+
+    public class ModbusMaster
     {
         private readonly IModbusMaster master;
         private readonly uint wordSize;
         private readonly Func<byte[], byte[]> endian;
         private readonly bool wordSwap;
         private readonly bool frontPadding;
-        public const int EncoderScalling = 200000;
-        public const ushort RpmScalling = 200;
 
 
-        public ILA2T(IModbusMaster master)
+        public ModbusMaster(IModbusMaster master)
         {
             this.master = master;
             this.wordSize = 32;
@@ -25,45 +23,49 @@
         #region Motor Functions
 
 
-        public ushort Speed
+        public int Speed
         {
             get
-              => (ushort)(this.ReadUshortHoldingRegisters(1, Map.TargetSpeedAddress, 1)[0] / ILA2T.RpmScalling);
+              => this.ReadUshortHoldingRegisters(1, Map.TargetSpeedAddress, 1)[0];
             set
-              => this.WriteIntHoldingRegisters(1, Map.TargetSpeedAddress, new[] { (int)(value * ILA2T.RpmScalling) });
+              => this.WriteIntHoldingRegisters(1, Map.TargetSpeedAddress, new[] { value });
         }
 
         public int Possition
         {
             get
-              => this.ReadIntHoldingRegisters(1, Map.TargetPossitionAddress, 1)[0] / ILA2T.EncoderScalling;
+              => this.ReadIntHoldingRegisters(1, Map.TargetPossitionAddress, 1)[0];
             set
-              => this.WriteIntHoldingRegisters(1, Map.TargetPossitionAddress, new[] { (int)(value * ILA2T.EncoderScalling) });
+              => this.WriteIntHoldingRegisters(1, Map.TargetPossitionAddress, new[] { value });
         }
 
-        public uint ControlMode
+        public ushort Control
         {
             get
-              => this.ReadUintHoldingRegisters(1, Map.ControlModeAddress, 1)[0];
+              => this.ReadUshortHoldingRegisters(1, Map.DCOMcontrolAddress, 1)[0];
             set
-              => this.WriteUIntHoldingRegisters(1, Map.ControlModeAddress, new[] { value });
+              => this.WriteUshortHoldingRegisters(1, Map.DCOMcontrolAddress, new[] { value });
         }
+
+        public ushort ControlModeStatus => this.ReadUshortHoldingRegisters(1, Map.DCOMstatusAddress, 1)[0];
 
         public int OperatingMode
         {
             get
-              => this.ReadIntHoldingRegisters(1, Map.OperatingModeAddress, 1)[0];
+              => this.ReadIntHoldingRegisters(1, Map.DCOMopmodeAddress, 1)[0];
             set
-              => this.WriteIntHoldingRegisters(1, Map.OperatingModeAddress, new[] { value });
+              => this.WriteIntHoldingRegisters(1, Map.DCOMopmodeAddress, new[] { value });
         }
 
-        public static byte[] BitArrayToByteArray(BitArray bits)
+        public int AcessLock
         {
-            byte[] ret = new byte[(bits.Length - 1) / 8 + 1];
-            bits.CopyTo(ret, 0);
-            return ret;
+            get
+                => this.ReadIntHoldingRegisters(1, Map.AccessExclAddress, 1)[0];
+            set
+                => this.WriteIntHoldingRegisters(1, Map.AccessExclAddress, new[] { value });
         }
 
+        public int AcessLockStatus => this.ReadIntHoldingRegisters(1, Map.OperatingModeAddress, 1)[0];
 
         #endregion
 
